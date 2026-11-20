@@ -458,8 +458,46 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
+    position, foodGrid = state
+    foodList = foodGrid.asList()
+    if not foodList:
+        return 0
 
-    return 0
+    def getDist(p1, p2):
+        if p1 == p2:
+            return 0
+        pair = (p1, p2) if p1 < p2 else (p2, p1)
+        if pair not in problem.heuristicInfo:
+            problem.heuristicInfo[pair] = mazeDistance(p1, p2, problem.startingGameState)
+        return problem.heuristicInfo[pair]
+
+    # Distance from Pacman's current position to the closest food dot
+    minToFood = min(getDist(position, food) for food in foodList)
+
+    if len(foodList) == 1:
+        return minToFood
+
+    # Prim's algorithm over the remaining food dots to find MST weight
+    visited = {foodList[0]}
+    unvisited = set(foodList[1:])
+    mstCost = 0
+
+    while unvisited:
+        minEdge = float('inf')
+        nextFood = None
+
+        for u in visited:
+            for v in unvisited:
+                dist = getDist(u, v)
+                if dist < minEdge:
+                    minEdge = dist
+                    nextFood = v
+
+        mstCost += minEdge
+        visited.add(nextFood)
+        unvisited.remove(nextFood)
+
+    return minToFood + mstCost
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
